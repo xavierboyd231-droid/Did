@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scientific Calculator | CalcSolver Professional</title>
+    <style>
+        :root {
+            --bg-calc: #0f172a;
+            --panel-calc: #1e293b;
+            --border-calc: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --key-bg: #334155;
+            --key-hover: #475569;
+            --op-bg: #f59e0b;
+            --op-hover: #d97706;
+        }
+
+        * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+
+        body {
+            background-color: var(--bg-calc);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background: var(--panel-calc);
+            border-bottom: 1px solid var(--border-calc);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand {
+            font-weight: 700;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #38bdf8;
+        }
+
+        .stealth-mode-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-calc);
+            color: var(--text-muted);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .stealth-mode-btn:hover { color: white; background: rgba(255, 255, 255, 0.1); }
+
+        .workspace {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* Calculator View */
+        #calcContainer {
+            background: var(--panel-calc);
+            border: 1px solid var(--border-calc);
+            border-radius: 16px;
+            padding: 24px;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+
+        .calc-screen {
+            background: #090d16;
+            border: 1px solid var(--border-calc);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 20px;
+            text-align: right;
+        }
+
+        .calc-history { font-size: 0.8rem; color: var(--text-muted); min-height: 18px; }
+        .calc-output { font-size: 1.8rem; font-weight: 700; color: #f8fafc; margin-top: 4px; overflow-x: auto; }
+
+        .calc-keypad {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .key {
+            background: var(--key-bg);
+            border: none;
+            color: white;
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .key:hover { background: var(--key-hover); }
+        .key.op { background: var(--op-bg); color: #111827; }
+        .key.op:hover { background: var(--op-hover); }
+        .key.span-2 { grid-column: span 2; }
+
+        .code-mode-banner {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Arcade Portal View */
+        #arcadeContainer {
+            display: none;
+            width: 100%;
+            max-width: 1300px;
+            margin: 0 auto;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .arcade-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--panel-calc);
+            padding: 15px 24px;
+            border-radius: 12px;
+            border: 1px solid var(--border-calc);
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .search-box {
+            background: #090d16;
+            border: 1px solid var(--border-calc);
+            padding: 8px 14px;
+            border-radius: 8px;
+            color: white;
+            outline: none;
+            width: 250px;
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .game-card {
+            background: var(--panel-calc);
+            border: 1px solid var(--border-calc);
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+        .game-card:hover { transform: translateY(-4px); border-color: var(--accent); }
+
+        .game-thumb {
+            width: 100%;
+            height: 140px;
+            background-size: cover;
+            background-position: center;
+            background-color: #0b0f19;
+        }
+
+        .game-details { padding: 14px; display: flex; flex-direction: column; gap: 4px; }
+        .game-title { font-weight: 700; font-size: 1rem; }
+        .game-category { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
+
+        /* Game Player View (Stays right here on page) */
+        #playerContainer {
+            display: none;
+            flex-direction: column;
+            width: 100%;
+            max-width: 1300px;
+            margin: 0 auto;
+            flex: 1;
+            gap: 15px;
+        }
+
+        .player-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--panel-calc);
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 1px solid var(--border-calc);
+        }
+
+        .frame-box {
+            width: 100%;
+            height: 75vh;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid var(--border-calc);
+        }
+
+        iframe { width: 100%; height: 100%; border: none; }
+
+        .btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn:hover { background: var(--accent-hover); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">
+            <span>🧮</span> CalcSolver <span style="font-size: 0.7rem; background: rgba(56,189,248,0.1); color: #38bdf8; padding: 2px 6px; border-radius: 4px;">Pro v2.6</span>
+        </div>
+        <button class="stealth-mode-btn" onclick="manualUnlock()">System Access</button>
+    </header>
+
+    <div class="workspace">
+
+        <!-- CALCULATOR INTERFACE -->
+        <div id="calcContainer">
+            <div class="calc-screen">
+                <div class="calc-history" id="calcHistory">0</div>
+                <div class="calc-output" id="calcOutput">0</div>
+            </div>
+            <div class="calc-keypad">
+                <button class="key" onclick="clearCalc()" style="background:#ef4444;">AC</button>
+                <button class="key" onclick="appendValue('(')">(</button>
+                <button class="key" onclick="appendValue(')')">)</button>
+                <button class="key op" onclick="appendValue('/')">÷</button>
+                
+                <button class="key" onclick="appendValue('7')">7</button>
+                <button class="key" onclick="appendValue('8')">8</button>
+                <button class="key" onclick="appendValue('9')">9</button>
+                <button class="key op" onclick="appendValue('*')">×</button>
+                
+                <button class="key" onclick="appendValue('4')">4</button>
+                <button class="key" onclick="appendValue('5')">5</button>
+                <button class="key" onclick="appendValue('6')">6</button>
+                <button class="key op" onclick="appendValue('-')">-</button>
+                
+                <button class="key" onclick="appendValue('1')">1</button>
+                <button class="key" onclick="appendValue('2')">2</button>
+                <button class="key" onclick="appendValue('3')">3</button>
+                <button class="key op" onclick="appendValue('+')">+</button>
+                
+                <button class="key span-2" onclick="appendValue('0')">0</button>
+                <button class="key" onclick="appendValue('.')">.</button>
+                <button class="key op" onclick="calculate()">=</button>
+            </div>
+            <div class="code-mode-banner">Secret Code: Type <b>7777</b> then press <b>=</b></div>
+        </div>
+
+        <!-- ARCADE PORTAL INTERFACE -->
+        <div id="arcadeContainer">
+            <div class="arcade-header">
+                <div>
+                    <h2 style="margin:0; font-size: 1.3rem;">Auxiliary Study Utilities & Browser Games</h2>
+                    <p style="margin:4px 0 0 0; font-size: 0.85rem; color: var(--text-muted);">Select a utility module below to launch right inside:</p>
+                </div>
+                <input type="text" class="search-box" id="searchBox" placeholder="Filter utilities..." onkeyup="filterGames()">
+            </div>
+            <div class="games-grid" id="gamesGrid"></div>
+        </div>
+
+        <!-- GAME PLAYER INTERFACE (Stays right in the app frame) -->
+        <div id="playerContainer">
+            <div class="player-nav">
+                <button class="btn" onclick="returnToArcade()">← Return to Library</button>
+                <div id="playingTitle" style="font-weight: 700;"></div>
+                <button class="btn" onclick="returnToCalc()">Lock & Return to Calculator</button>
+            </div>
+            <div class="frame-box">
+                <iframe id="gameFrame" src=""></iframe>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const gamesList = [
+            { name: "Basketball Legends", cat: "Sports Simulation", img: "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=600&q=80", url: "https://basketbros.io/" },
+            { name: "Retro Bowl", cat: "Strategy & Sports", img: "https://images.unsplash.com/photo-1566951324795-67c30982e56e?w=600&q=80", url: "https://retrobowl.me/" },
+            { name: "Slope", cat: "Physics Algorithm", img: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&q=80", url: "https://kdata1.com/2020/10/slope/" },
+            { name: "Boxing Random", cat: "Physics Simulation", img: "https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=600&q=80", url: "https://boxingrandom.io/" },
+            { name: "Soccer Random", cat: "Physics Simulation", img: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=600&q=80", url: "https://soccer-random.io/" },
+            { name: "Moto X3M", cat: "Velocity Physics", img: "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=600&q=80", url: "https://images-opensocial.googleusercontent.com/gadgets/ifr?url=https://cdn.jsdelivr.net/gh/classroom6x/classroom6x.github.io@master/moto-x3m/index.xml" },
+            { name: "Drift Hunters", cat: "Mechanics Lab", img: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600&q=80", url: "https://drifthunters.co/" },
+            { name: "Smash Karts", cat: "Multiplayer Logic", img: "https://images.unsplash.com/photo-1511919884226-fd3cad34687c?w=600&q=80", url: "https://smashkarts.io/" },
+            { name: "Cookie Clicker", cat: "Data Processing", img: "https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=600&q=80", url: "https://orteil.dashnet.org/cookieclicker/" }
+        ];
+
+        let currentInput = "0";
+
+        function appendValue(val) {
+            if (currentInput === "0" && val !== '.') {
+                currentInput = val;
+            } else {
+                currentInput += val;
+            }
+            document.getElementById('calcOutput').innerText = currentInput;
+        }
+
+        function clearCalc() {
+            currentInput = "0";
+            document.getElementById('calcOutput').innerText = "0";
+            document.getElementById('calcHistory').innerText = "0";
+        }
+
+        function calculate() {
+            if (currentInput === "7777") {
+                toggleArcade();
+                clearCalc();
+                return;
+            }
+            try {
+                let result = eval(currentInput.replace('×', '*').replace('÷', '/'));
+                document.getElementById('calcHistory').innerText = currentInput + " =";
+                currentInput = String(result);
+                document.getElementById('calcOutput').innerText = currentInput;
+            } catch (error) {
+                document.getElementById('calcOutput').innerText = "Error";
+                currentInput = "0";
+            }
+        }
+
+        function manualUnlock() {
+            let code = prompt("Enter system security passcode:");
+            if (code === "7777") {
+                toggleArcade();
+            } else if (code !== null) {
+                alert("Invalid passcode.");
+            }
+        }
+
+        function toggleArcade() {
+            document.getElementById('calcContainer').style.display = 'none';
+            document.getElementById('playerContainer').style.display = 'none';
+            document.getElementById('arcadeContainer').style.display = 'flex';
+            renderGamesGrid();
+        }
+
+        function returnToArcade() {
+            document.getElementById('playerContainer').style.display = 'none';
+            document.getElementById('arcadeContainer').style.display = 'flex';
+            document.getElementById('gameFrame').src = "";
+        }
+
+        function returnToCalc() {
+            document.getElementById('playerContainer').style.display = 'none';
+            document.getElementById('arcadeContainer').style.display = 'none';
+            document.getElementById('calcContainer').style.display = 'block';
+            document.getElementById('gameFrame').src = "";
+            clearCalc();
+        }
+
+        function renderGamesGrid(filter = "") {
+            const grid = document.getElementById('gamesGrid');
+            grid.innerHTML = "";
+
+            const matches = gamesList.filter(g => g.name.toLowerCase().includes(filter) || g.cat.toLowerCase().includes(filter));
+            
+            matches.forEach(game => {
+                const card = document.createElement('div');
+                card.className = "game-card";
+                card.onclick = () => launchGame(game);
+                card.innerHTML = `
+                    <div class="game-thumb" style="background-image: url('${game.img}')"></div>
+                    <div class="game-details">
+                        <div class="game-title">${game.name}</div>
+                        <div class="game-category">${game.cat}</div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function filterGames() {
+            const query = document.getElementById('searchBox').value.toLowerCase();
+            renderGamesGrid(query);
+        }
+
+        function launchGame(game) {
+            document.getElementById('arcadeContainer').style.display = 'none';
+            document.getElementById('playerContainer').style.display = 'flex';
+            document.getElementById('playingTitle').innerText = game.name;
+            document.getElementById('gameFrame').src = game.url;
+        }
+    </script>
+</body>
+</html>
